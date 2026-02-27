@@ -34,13 +34,13 @@ pacman -S mingw-w64-x86_64-SDL2
 Abra o terminal **MSYS2 MinGW64** na pasta do projeto e execute:
 
 ```bash
-$ g++ main.cpp -o game.exe -lmingw32 -lSDL2main -lSDL2 -mwindows
+$ g++ *.cpp -o game.exe -lmingw32 -lSDL2main -lSDL2 -mwindows
 ```
 
 Ou compile e execute em um único comando:
 
 ```bash
-$ g++ main.cpp -o game.exe -lmingw32 -lSDL2main -lSDL2 -mwindows && ./game.exe
+$ g++ *.cpp -o game.exe -lmingw32 -lSDL2main -lSDL2 -mwindows && ./game.exe
 ```
 
 ---
