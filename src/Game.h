@@ -6,9 +6,11 @@
 #include "Player.h"
 #include "CircuitSystem.h"
 #include "DialogueSystem.h"
+#include "TileMap.h"
+#include "Camera.h"
 
-const int SCALE = 2;
-const int SCREEN_WIDTH = 128 * SCALE;
+const int SCALE = 3;
+const int SCREEN_WIDTH = 192 * SCALE;
 const int SCREEN_HEIGHT = 160 * SCALE;
 const int FPS = 60;
 const int FRAME_DELAY = 1000 / FPS;
@@ -34,6 +36,8 @@ private:
     Player player;
     CircuitSystem circuitSystem;
     DialogueSystem dialogueSystem;
+    TileMap* tileMap;
+    Camera* camera;
 };
 
 #endif // GAME_H

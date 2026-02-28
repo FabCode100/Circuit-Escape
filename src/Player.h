@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include <SDL2/SDL.h>
+#include <chrono>
 
 const int TILE_SIZE = 32;
 // sprite sheet is now 96x128: 3 columns (frames) × 4 rows (directions)
@@ -41,6 +42,8 @@ private:
     int frame;
     int frameCounter;
     SDL_Texture* texture;
+    std::chrono::steady_clock::time_point lastMoveTime;
+    int moveDelayMs = 220;
 };
 
 #endif // PLAYER_H

@@ -2,8 +2,9 @@
 #include "Game.h"
 #include <iostream>
 #include <SDL2/SDL_image.h>
+#include <chrono>
 
-Player::Player() : gridX(3), gridY(3), isMoving(false), direction(DOWN), frame(0), frameCounter(0), texture(nullptr) {
+Player::Player() : gridX(3), gridY(3), isMoving(false), direction(DOWN), frame(0), frameCounter(0), texture(nullptr), lastMoveTime(std::chrono::steady_clock::now()) {
 }
 
 Player::~Player() {
@@ -40,27 +41,39 @@ void Player::SetTexture(SDL_Texture* tex) {
 }
 
 void Player::MoveUp() {
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastMoveTime).count() < moveDelayMs) return;
     gridY--;
     direction = UP;
     isMoving = true;
+    lastMoveTime = now;
 }
 
 void Player::MoveDown() {
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastMoveTime).count() < moveDelayMs) return;
     gridY++;
     direction = DOWN;
     isMoving = true;
+    lastMoveTime = now;
 }
 
 void Player::MoveLeft() {
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastMoveTime).count() < moveDelayMs) return;
     gridX--;
     direction = LEFT;
     isMoving = true;
+    lastMoveTime = now;
 }
 
 void Player::MoveRight() {
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastMoveTime).count() < moveDelayMs) return;
     gridX++;
     direction = RIGHT;
     isMoving = true;
+    lastMoveTime = now;
 }
 
 void Player::SetMoving(bool moving) {
