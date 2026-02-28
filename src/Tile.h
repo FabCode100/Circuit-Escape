@@ -8,7 +8,7 @@ public:
     Tile(int id = 0, bool solid = false);
     int GetId() const;
     bool IsSolid() const;
-    void Render(SDL_Renderer* renderer, int x, int y, int scale = 1) const;
+    void Render(SDL_Renderer* renderer, SDL_Texture* tileset, int x, int y, int scale = 1) const;
 private:
     int id;
     bool solid;

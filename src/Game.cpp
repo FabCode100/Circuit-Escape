@@ -4,7 +4,7 @@
 #include "TileMap.h"
 #include "Camera.h"
 
-Game::Game() : window(nullptr), renderer(nullptr), running(false), tileMap(nullptr), camera(nullptr) {
+Game::Game() : window(nullptr), renderer(nullptr), running(false), tilesetTexture(nullptr), objectsTexture(nullptr), tileMap(nullptr), camera(nullptr) {
 }
 
 Game::~Game() {
@@ -58,15 +58,59 @@ bool Game::Initialize() {
         return false;
     }
 
-    tileMap = new TileMap(24, 16); // mapa 24x16
-    // Preencher o mapa com tiles simples (bordas sólidas)
-    for (int y = 0; y < 16; ++y) {
-        for (int x = 0; x < 24; ++x) {
-            bool solid = (x == 0 || y == 0 || x == 23 || y == 15);
-            tileMap->SetTile(x, y, solid ? 1 : 0, solid);
+    SDL_Surface* tileSurface = IMG_Load("assets/tileset_circuit.png");
+    if (!tileSurface) {
+        std::cerr << "Failed to load tileset_circuit: " << IMG_GetError() << "\n";
+        player.Shutdown();
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return false;
+    }
+    tilesetTexture = SDL_CreateTextureFromSurface(renderer, tileSurface);
+    SDL_FreeSurface(tileSurface);
+    
+    if (!tilesetTexture) {
+        std::cerr << "Failed to create tileset texture: " << SDL_GetError() << "\n";
+        return false;
+    }
+
+    tileMap = new TileMap();
+    if (!tileMap->LoadFromFile("assets/map1.csv")) {
+        std::cerr << "Warning: Could not load assets/map1.csv. Creating fallback map.\n";
+        // Fallback map se arquivo não existir
+        delete tileMap;
+        tileMap = new TileMap(24, 16);
+        for (int y = 0; y < 16; ++y) {
+            for (int x = 0; x < 24; ++x) {
+                bool solid = (x == 0 || y == 0 || x == 23 || y == 15);
+                tileMap->SetTile(x, y, solid ? 16 : 0, solid);
+            }
         }
     }
+    
+    tileMap->SetTilesetTexture(tilesetTexture);
+    
+    // Configurando Circuit System (Objetos do Labirinto)
+    SDL_Surface* objSurface = IMG_Load("assets/tileset_objects.png");
+    if (!objSurface) {
+        std::cerr << "Warning: Could not load assets/tileset_objects.png: " << IMG_GetError() << "\n";
+    } else {
+        objectsTexture = SDL_CreateTextureFromSurface(renderer, objSurface);
+        SDL_FreeSurface(objSurface);
+    }
+    
+    circuitSystem.Initialize(objectsTexture);
+    // Adicionando cenário experimental: 
+    // Switch de ID 1 na posição 4,4
+    circuitSystem.AddElement(CircuitType::SWITCH, 1, 4, 4);
+    // Porta de ID 1 na posição 8,4 ligada a esse switch
+    circuitSystem.AddElement(CircuitType::DOOR, 1, 8, 4);
+
     camera = new Camera(SCREEN_WIDTH, SCREEN_HEIGHT);
+    player.SetTileMap(tileMap);
+    player.SetCircuitSystem(&circuitSystem);
 
     running = true;
     return true;
@@ -89,33 +133,38 @@ void Game::Run() {
 
 void Game::HandleInput() {
     SDL_Event event;
-    bool moving = false;
-
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             running = false;
         }
-
-        if (event.type == SDL_KEYDOWN) {
-            switch (event.key.keysym.sym) {
-                case SDLK_UP:
-                    player.MoveUp();
-                    moving = true;
-                    break;
-                case SDLK_DOWN:
-                    player.MoveDown();
-                    moving = true;
-                    break;
-                case SDLK_LEFT:
-                    player.MoveLeft();
-                    moving = true;
-                    break;
-                case SDLK_RIGHT:
-                    player.MoveRight();
-                    moving = true;
-                    break;
+        
+        // Pressionamento uníco para evitar segurar a tecla e o botão "piscar" loucamente
+        if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
+            if (event.key.keysym.sym == SDLK_SPACE || event.key.keysym.sym == SDLK_e) {
+                // Tenta interagir
+                circuitSystem.Interact(player.GetGridX(), player.GetGridY());
             }
         }
+    }
+
+    const Uint8* keystate = SDL_GetKeyboardState(NULL);
+    bool moving = false;
+
+    if (keystate[SDL_SCANCODE_UP]) {
+        player.MoveUp();
+        moving = true;
+    }
+    else if (keystate[SDL_SCANCODE_DOWN]) {
+        player.MoveDown();
+        moving = true;
+    }
+    else if (keystate[SDL_SCANCODE_LEFT]) {
+        player.MoveLeft();
+        moving = true;
+    }
+    else if (keystate[SDL_SCANCODE_RIGHT]) {
+        player.MoveRight();
+        moving = true;
     }
 
     player.SetMoving(moving);
@@ -123,9 +172,11 @@ void Game::HandleInput() {
 
 void Game::Update() {
     player.Update();
-    // Centralizar câmera no player, mas limitar aos limites do mapa
-    int camX = player.GetGridX() * TILE_SIZE * SCALE + TILE_SIZE * SCALE / 2 - SCREEN_WIDTH / 2;
-    int camY = player.GetGridY() * TILE_SIZE * SCALE + TILE_SIZE * SCALE / 2 - SCREEN_HEIGHT / 2;
+    circuitSystem.Update(); // Sincroniza estado das portas
+    
+    // Centralizar câmera no player (usando worldX/Y para suavidade)
+    int camX = player.GetWorldX() * SCALE + (TILE_SIZE * SCALE) / 2 - SCREEN_WIDTH / 2;
+    int camY = player.GetWorldY() * SCALE + (TILE_SIZE * SCALE) / 2 - SCREEN_HEIGHT / 2;
     // Limites máximos
     int maxCamX = tileMap->GetWidth() * TILE_SIZE * SCALE - SCREEN_WIDTH;
     int maxCamY = tileMap->GetHeight() * TILE_SIZE * SCALE - SCREEN_HEIGHT;
@@ -139,15 +190,28 @@ void Game::Update() {
 void Game::Render() {
     SDL_SetRenderDrawColor(renderer, 20, 20, 40, 255);
     SDL_RenderClear(renderer);
-    // Renderizar o mapa
+    // Renderizar o mapa fixo
     tileMap->Render(renderer, camera->GetX(), camera->GetY(), SCALE);
-    // Renderizar o player
-    player.Render(renderer);
+    // Renderizar itens e circuitos em cima do mapa
+    circuitSystem.Render(renderer, camera->GetX(), camera->GetY(), SCALE);
+    // Renderizar o player em cima de tudo
+    player.Render(renderer, camera->GetX(), camera->GetY());
     SDL_RenderPresent(renderer);
 }
 
 void Game::Shutdown() {
     player.Shutdown();
+    circuitSystem.Shutdown();
+
+    if (objectsTexture) {
+        SDL_DestroyTexture(objectsTexture);
+        objectsTexture = nullptr;
+    }
+
+    if (tilesetTexture) {
+        SDL_DestroyTexture(tilesetTexture);
+        tilesetTexture = nullptr;
+    }
 
     if (renderer) {
         SDL_DestroyRenderer(renderer);

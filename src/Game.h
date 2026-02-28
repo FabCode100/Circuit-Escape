@@ -33,6 +33,9 @@ private:
     SDL_Renderer* renderer;
     bool running;
     
+    SDL_Texture* tilesetTexture;
+    SDL_Texture* objectsTexture;
+    
     Player player;
     CircuitSystem circuitSystem;
     DialogueSystem dialogueSystem;
