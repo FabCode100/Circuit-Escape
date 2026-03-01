@@ -162,3 +162,10 @@ int Player::GetGridX() const { return gridX; }
 int Player::GetGridY() const { return gridY; }
 float Player::GetWorldX() const { return worldX; }
 float Player::GetWorldY() const { return worldY; }
+
+void Player::SetWorldPos(int x, int y) {
+    gridX = x;
+    gridY = y;
+    worldX = (float)(x * TILE_SIZE);
+    worldY = (float)(y * TILE_SIZE);
+}

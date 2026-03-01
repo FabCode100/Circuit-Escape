@@ -2,6 +2,8 @@
 #define GAME_STATE_H
 
 enum class GameState {
+    MAIN_MENU,       // Tela inicial
+    LEVEL_SELECTION, // Escolha de fases
     EXPLORATION,   // Explorando o mapa/labirinto
     PUZZLE,        // Montando circuito no puzzle
     DIALOGUE,      // Diálogo com Professor Leo

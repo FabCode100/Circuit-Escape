@@ -35,6 +35,7 @@ public:
 
     void Update();
     void Render(SDL_Renderer* renderer, int camX, int camY);
+    void SetWorldPos(int x, int y);
 
     int GetGridX() const;
     int GetGridY() const;

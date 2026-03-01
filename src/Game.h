@@ -38,26 +38,36 @@ private:
     void Render();
 
     // HandleInput por estado
+    void HandleInput_MainMenu();
+    void HandleInput_LevelSelection();
     void HandleInput_Exploration();
     void HandleInput_Puzzle();
     void HandleInput_Dialogue();
 
     // Update por estado
+    void Update_MainMenu(float deltaTime);
+    void Update_LevelSelection(float deltaTime);
     void Update_Exploration();
     void Update_Puzzle(float deltaTime);
     void Update_Dialogue(float deltaTime);
     void Update_Victory(float deltaTime);
 
     // Render por estado
+    void Render_MainMenu();
+    void Render_LevelSelection();
     void Render_Exploration();
     void Render_Puzzle();
     void Render_Dialogue();
     void Render_Victory();
+    void Render_Vignette();
+    void Render_ObjectiveIndicator();
 
     // Transições de estado
+    void EnterMainMenu();
+    void EnterLevelSelection();
     void EnterPuzzle(int puzzleId);
     void ExitPuzzle();
-    void EnterDialogue(const std::string& speaker, const std::vector<std::string>& messages);
+    void EnterDialogue(const std::string& speaker, const std::vector<std::string>& messages, bool showPortrait = true);
     void ExitDialogue();
     void EnterVictory();
 
@@ -74,6 +84,7 @@ private:
     // Texturas
     SDL_Texture* tilesetTexture;
     SDL_Texture* objectsTexture;
+    SDL_Texture* menuBackgroundTexture;
 
     // Subsistemas
     Player player;
@@ -96,6 +107,10 @@ private:
     PuzzleResult lastPuzzleResult;
     int pendingPuzzleId;
     bool firstTimePuzzle;
+
+    // Menu Selection
+    int mainMenuSelection;
+    int levelSelection;
 };
 
 #endif // GAME_H

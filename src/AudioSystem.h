@@ -12,6 +12,11 @@ public:
     bool Initialize();
     void Shutdown();
 
+    // Música de Fundo
+    enum class BGMType { MENU, GAME, PUZZLE };
+    void PlayBGM(BGMType type);
+    void StopBGM();
+
     // Sons da Fase 1
     void PlaySuccess();
     void PlayError();
@@ -24,6 +29,9 @@ private:
     Mix_Chunk* successSound;
     Mix_Chunk* errorSound;
     Mix_Chunk* explosionSound;
+    Mix_Music* menuBGM;
+    Mix_Music* gameBGM;
+    Mix_Music* puzzleBGM;
     bool initialized;
 };
 
