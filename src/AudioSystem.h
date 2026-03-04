@@ -21,6 +21,7 @@ public:
     void PlaySuccess();
     void PlayError();
     void PlayExplosion();
+    void PlaySelect();
 
     // Controle de volume
     void SetVolume(int volume); // 0-128
@@ -29,6 +30,7 @@ private:
     Mix_Chunk* successSound;
     Mix_Chunk* errorSound;
     Mix_Chunk* explosionSound;
+    Mix_Chunk* selectSound;
     Mix_Music* menuBGM;
     Mix_Music* gameBGM;
     Mix_Music* puzzleBGM;

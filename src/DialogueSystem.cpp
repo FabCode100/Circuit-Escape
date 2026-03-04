@@ -176,16 +176,69 @@ void DialogueSystem::Render(SDL_Renderer* renderer, int screenW, int screenH) {
     // Texto com typewriter
     if (!displayedText.empty() && fontSmall) {
         SDL_Color textColor = {220, 220, 220, 255};
-        // Quebra texto em linhas se necessário (wrapping simples)
         int textX = boxX + (showPortrait ? 100 : 15);
         int maxWidth = boxW - (showPortrait ? 115 : 30);
-        SDL_Surface* surf = TTF_RenderText_Blended_Wrapped(fontSmall, displayedText.c_str(), textColor, maxWidth);
-        if (surf) {
-            SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
-            SDL_Rect dst = {textX, boxY + 15, surf->w, surf->h};
-            SDL_RenderCopy(renderer, tex, nullptr, &dst);
-            SDL_DestroyTexture(tex);
-            SDL_FreeSurface(surf);
+        int lineSpacing = 8; // Espaçamento extra entre linhas
+        int lineHeight = TTF_FontLineSkip(fontSmall) + lineSpacing;
+
+        // Wrapping manual simples para controlar o espaçamento entre as linhas
+        std::vector<std::string> lines;
+        std::string currentLine = "";
+        std::string word = "";
+
+        for (size_t i = 0; i < displayedText.size(); i++) {
+            char c = displayedText[i];
+            if (c == ' ' || c == '\n') {
+                int w, h;
+                std::string testLine = currentLine + word + " ";
+                TTF_SizeText(fontSmall, testLine.c_str(), &w, &h);
+                if (w > maxWidth && !currentLine.empty()) {
+                    lines.push_back(currentLine);
+                    currentLine = word + " ";
+                } else {
+                    currentLine += word + " ";
+                }
+                word = "";
+                if (c == '\n') {
+                    lines.push_back(currentLine);
+                    currentLine = "";
+                }
+            } else {
+                word += c;
+            }
+        }
+        if (!word.empty()) {
+            int w, h;
+            std::string testLine = currentLine + word;
+            TTF_SizeText(fontSmall, testLine.c_str(), &w, &h);
+            if (w > maxWidth && !currentLine.empty()) {
+                lines.push_back(currentLine);
+                currentLine = word;
+            } else {
+                currentLine += word;
+            }
+        }
+        if (!currentLine.empty()) {
+            lines.push_back(currentLine);
+        }
+
+        int drawY = boxY + 15;
+        for (const auto& line : lines) {
+            // Trim espaços finais para melhor alinhamento
+            std::string renderLine = line;
+            if (!renderLine.empty() && renderLine.back() == ' ') renderLine.pop_back();
+
+            if (!renderLine.empty()) {
+                SDL_Surface* surf = TTF_RenderText_Blended(fontSmall, renderLine.c_str(), textColor);
+                if (surf) {
+                    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+                    SDL_Rect dst = {textX, drawY, surf->w, surf->h};
+                    SDL_RenderCopy(renderer, tex, nullptr, &dst);
+                    SDL_DestroyTexture(tex);
+                    SDL_FreeSurface(surf);
+                }
+            }
+            drawY += lineHeight;
         }
     }
 

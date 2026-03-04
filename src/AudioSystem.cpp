@@ -2,7 +2,7 @@
 #include <iostream>
 
 AudioSystem::AudioSystem()
-    : successSound(nullptr), errorSound(nullptr), explosionSound(nullptr),
+    : successSound(nullptr), errorSound(nullptr), explosionSound(nullptr), selectSound(nullptr),
       menuBGM(nullptr), gameBGM(nullptr), puzzleBGM(nullptr), initialized(false) {
 }
 
@@ -35,6 +35,11 @@ bool AudioSystem::Initialize() {
         std::cerr << "Warning: Could not load explosion.wav: " << Mix_GetError() << "\n";
     }
 
+    selectSound = Mix_LoadWAV("assets/sounds/success.wav"); // Fallback to success if no specific select.wav
+    if (!selectSound) {
+        std::cerr << "Warning: Could not load select sound: " << Mix_GetError() << "\n";
+    }
+
     menuBGM = Mix_LoadMUS("assets/sounds/menu_music.mp3");
     if (!menuBGM) {
         std::cerr << "Warning: Could not load menu_music.mp3: " << Mix_GetError() << "\n";
@@ -60,6 +65,7 @@ void AudioSystem::Shutdown() {
     if (successSound) { Mix_FreeChunk(successSound); successSound = nullptr; }
     if (errorSound) { Mix_FreeChunk(errorSound); errorSound = nullptr; }
     if (explosionSound) { Mix_FreeChunk(explosionSound); explosionSound = nullptr; }
+    if (selectSound) { Mix_FreeChunk(selectSound); selectSound = nullptr; }
 
     if (initialized) {
         Mix_CloseAudio();
@@ -88,6 +94,14 @@ void AudioSystem::PlayExplosion() {
         Mix_PlayChannel(-1, explosionSound, 0);
     } else {
         std::cout << "[AUDIO] Explosion sound\n";
+    }
+}
+
+void AudioSystem::PlaySelect() {
+    if (selectSound) {
+        Mix_PlayChannel(-1, selectSound, 0);
+    } else {
+        std::cout << "[AUDIO] Select sound\n";
     }
 }
 

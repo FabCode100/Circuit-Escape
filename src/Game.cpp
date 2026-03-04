@@ -217,9 +217,10 @@ void Game::HandleInput() {
         switch (currentState) {
             case GameState::MAIN_MENU:
                 if (event.type == SDL_KEYDOWN) {
-                    if (event.key.keysym.sym == SDLK_UP) mainMenuSelection = 0;
-                    if (event.key.keysym.sym == SDLK_DOWN) mainMenuSelection = 1;
+                    if (event.key.keysym.sym == SDLK_UP) { mainMenuSelection = 0; audioSystem.PlaySelect(); }
+                    if (event.key.keysym.sym == SDLK_DOWN) { mainMenuSelection = 1; audioSystem.PlaySelect(); }
                     if (event.key.keysym.sym == SDLK_SPACE || event.key.keysym.sym == SDLK_RETURN) {
+                        audioSystem.PlaySelect();
                         if (mainMenuSelection == 0) EnterLevelSelection();
                         else running = false;
                     }
@@ -228,9 +229,10 @@ void Game::HandleInput() {
 
             case GameState::LEVEL_SELECTION:
                 if (event.type == SDL_KEYDOWN) {
-                    if (event.key.keysym.sym == SDLK_LEFT) { if (levelSelection > 1) levelSelection--; }
-                    if (event.key.keysym.sym == SDLK_RIGHT) { if (levelSelection < 3) levelSelection++; }
+                    if (event.key.keysym.sym == SDLK_LEFT) { if (levelSelection > 1) { levelSelection--; audioSystem.PlaySelect(); } }
+                    if (event.key.keysym.sym == SDLK_RIGHT) { if (levelSelection < 3) { levelSelection++; audioSystem.PlaySelect(); } }
                     if (event.key.keysym.sym == SDLK_SPACE || event.key.keysym.sym == SDLK_RETURN) {
+                        audioSystem.PlaySelect();
                         if (levelSelection == 1) {
                             currentState = GameState::EXPLORATION;
                             audioSystem.PlayBGM(AudioSystem::BGMType::GAME);
@@ -420,15 +422,34 @@ void Game::Render() {
         int ptDrawY = puzzleTriggerY * 32 * SCALE - camY;
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-        // Quadrado pulsante amarelo
+        // Efeito visual Holográfico Sci-Fi
         Uint32 ticks = SDL_GetTicks();
-        float pulse = (float)(std::sin(ticks / 300.0) * 0.3 + 0.7);
+        float pulse = (float)(std::sin(ticks / 150.0) * 0.5 + 0.5);
         Uint8 alpha = (Uint8)(150 * pulse);
-        SDL_SetRenderDrawColor(renderer, 255, 200, 0, alpha);
-        SDL_Rect trigRect = {ptDrawX + 4, ptDrawY + 4, 32 * SCALE - 8, 32 * SCALE - 8};
-        SDL_RenderDrawRect(renderer, &trigRect);
-        SDL_Rect trigRect2 = {ptDrawX + 6, ptDrawY + 6, 32 * SCALE - 12, 32 * SCALE - 12};
-        SDL_RenderDrawRect(renderer, &trigRect2);
+
+        // 1. Base glowing circle / console outline (Ciano)
+        SDL_SetRenderDrawColor(renderer, 0, 255, 255, alpha);
+        for (int w = 0; w < 4; w++) {
+            SDL_Rect baseRect = {ptDrawX + 8 - w, ptDrawY + 32 * SCALE - 8 - w, 32 * SCALE - 16 + w*2, 8 + w*2};
+            SDL_RenderDrawRect(renderer, &baseRect);
+        }
+
+        // 2. Holograma de Ponto de Exclamação Flutuante
+        float floatY = (float)(std::sin(ticks / 200.0) * 8.0f);
+        SDL_SetRenderDrawColor(renderer, 255, 230, 0, 255); // Amarelo vibrante
+        int exX = ptDrawX + (32 * SCALE) / 2 - 4;
+        int exY = ptDrawY - 15 + (int)floatY;
+        SDL_Rect exclamLine = {exX, exY - 20, 8, 16};
+        SDL_Rect exclamDot = {exX, exY, 8, 8};
+        SDL_RenderFillRect(renderer, &exclamLine);
+        SDL_RenderFillRect(renderer, &exclamDot);
+
+        // 3. Feixes de luz holográficos (linhas verticais subindo da base)
+        SDL_SetRenderDrawColor(renderer, 0, 255, 255, alpha / 3);
+        for (int i = 0; i < 5; i++) {
+            int lineX = ptDrawX + 12 + i * (32 * SCALE - 24) / 4;
+            SDL_RenderDrawLine(renderer, lineX, ptDrawY + 32 * SCALE - 10, lineX, exY + 10);
+        }
     }
 
     player.Render(renderer, camX, camY);
@@ -657,6 +678,21 @@ void Game::Render_LevelSelection() {
         } else {
             SDL_SetRenderDrawColor(renderer, 50, 50, 80, 255);
             SDL_RenderDrawRect(renderer, &card);
+        }
+
+        // Desenha miniatura usando o tilesetTexture de forma criativa
+        if (tilesetTexture) {
+            SDL_Rect srcRect = {0, 0, 128, 128};
+            if (i == 1) srcRect = {0, 0, 64, 64}; // Circuitos
+            else if (i == 2) srcRect = {64, 0, 64, 64}; // Outra parte
+            else if (i == 3) srcRect = {0, 64, 64, 64}; // Outra parte
+
+            SDL_Rect destRect = {x + 10, y + 10, 100, 100};
+
+            // Escurece se estiver bloqueada
+            if (i > 1) SDL_SetTextureColorMod(tilesetTexture, 80, 80, 80);
+            SDL_RenderCopy(renderer, tilesetTexture, &srcRect, &destRect);
+            if (i > 1) SDL_SetTextureColorMod(tilesetTexture, 255, 255, 255); // Reset
         }
 
         TTF_Font* font = TTF_OpenFont("assets/PressStart2P-Regular.ttf", 8);
