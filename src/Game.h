@@ -15,6 +15,7 @@
 #include "VFX.h"
 #include "AudioSystem.h"
 #include "HardwareInterface.h"
+#include "AchievementSystem.h"
 
 const int SCALE = 3;
 const int SCREEN_WIDTH = 192 * SCALE;
@@ -94,6 +95,7 @@ private:
     VFX vfx;
     AudioSystem audioSystem;
     HardwareInterface hardwareInterface;
+    AchievementSystem achievementSystem;
     TileMap* tileMap;
     Camera* camera;
 
@@ -107,6 +109,7 @@ private:
     PuzzleResult lastPuzzleResult;
     int pendingPuzzleId;
     bool firstTimePuzzle;
+    int puzzleFails;
 
     // Menu Selection
     int mainMenuSelection;

@@ -13,7 +13,7 @@ Game::Game()
       lastFrameTime(0),
       puzzleTriggerX(6), puzzleTriggerY(4),
       puzzleSolved(false), lastPuzzleResult(PuzzleResult::NONE),
-      pendingPuzzleId(0), firstTimePuzzle(true),
+      pendingPuzzleId(0), firstTimePuzzle(true), puzzleFails(0),
       mainMenuSelection(0), levelSelection(1) {
 }
 
@@ -152,6 +152,10 @@ bool Game::Initialize() {
         std::cerr << "Warning: DialogueSystem initialization had issues\n";
     }
 
+    if (!achievementSystem.Initialize(renderer)) {
+        std::cerr << "Warning: AchievementSystem initialization had issues\n";
+    }
+
     audioSystem.Initialize(); // Não é fatal se falhar
     audioSystem.PlayBGM(AudioSystem::BGMType::MENU);
     hardwareInterface.Initialize();
@@ -195,6 +199,7 @@ void Game::Run() {
 
         // VFX sempre atualiza
         vfx.Update(deltaTime);
+        achievementSystem.Update(deltaTime);
 
         Render();
 
@@ -479,6 +484,8 @@ void Game::Render() {
         default:
             break;
     }
+
+    achievementSystem.Render(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     SDL_RenderPresent(renderer);
 }
@@ -815,6 +822,14 @@ void Game::HandlePuzzleResult(PuzzleResult result) {
             vfx.TriggerFlash({0, 255, 100, 150}, 0.5f);
             puzzleSolved = true;
 
+            if (puzzleFails == 0) {
+                achievementSystem.Unlock("prodigy", "Prodigio", "Resolveu de primeira! Tesla ficaria orgulhoso.");
+            } else if (puzzleFails >= 5) {
+                achievementSystem.Unlock("persistence", "Brasileiro nao desiste", "Demorou, mas a corrente fluiu!");
+            } else {
+                achievementSystem.Unlock("first_light", "Haja Luz!", "Circuito basico resolvido.");
+            }
+
             // Diálogo de parabéns
             std::vector<std::string> msgs = {
                 "Excelente trabalho! O circuito esta funcionando perfeitamente!",
@@ -827,6 +842,7 @@ void Game::HandlePuzzleResult(PuzzleResult result) {
         }
         case PuzzleResult::NO_RESISTOR: {
             std::cout << "[GAME] Puzzle FAIL: No resistor!\n";
+            puzzleFails++;
             audioSystem.PlayExplosion();
             hardwareInterface.SetLEDColor("red");
             hardwareInterface.PlayBuzzerPattern("error");
@@ -834,20 +850,30 @@ void Game::HandlePuzzleResult(PuzzleResult result) {
             vfx.TriggerScreenShake(0.5f, 8.0f);
             vfx.TriggerSmoke(puzzleTriggerX * 32 + 16, puzzleTriggerY * 32 + 16, 20);
             vfx.TriggerFlash({255, 50, 0, 120}, 0.3f);
+            
+            achievementSystem.Unlock("burned_led", "LED Descartavel", "Fritou o LED por nao usar resistor. Genial!");
             break;
         }
         case PuzzleResult::OPEN_CIRCUIT: {
             std::cout << "[GAME] Puzzle FAIL: Open circuit!\n";
+            puzzleFails++;
             audioSystem.PlayError();
             hardwareInterface.SetLEDColor("yellow");
             hardwareInterface.PlayBuzzerPattern("warning");
+            
+            if (puzzleFails == 3) {
+                achievementSystem.Unlock("wireless_power", "Wireless Amador", "A corrente nao vai pular pelo buraco!");
+            }
             break;
         }
         case PuzzleResult::INVERTED: {
             std::cout << "[GAME] Puzzle FAIL: Inverted polarity!\n";
+            puzzleFails++;
             audioSystem.PlayError();
             hardwareInterface.SetLEDColor("blue");
             hardwareInterface.PlayBuzzerPattern("error");
+            
+            achievementSystem.Unlock("inverted_polarity", "De tras pra frente", "A energia nao flui por esse lado, Einstein!");
             vfx.TriggerScreenShake(0.3f, 4.0f);
             break;
         }
