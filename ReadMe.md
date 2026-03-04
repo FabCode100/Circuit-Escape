@@ -46,7 +46,7 @@ pacman -S mingw-w64-x86_64-gcc \
 Vá até a pasta `src/` do projeto e execute:
 
 ```bash
-g++ main.cpp Game.cpp Player.cpp TileMap.cpp Tile.cpp Camera.cpp CircuitSystem.cpp CircuitPuzzle.cpp DialogueSystem.cpp VFX.cpp AudioSystem.cpp HardwareInterface.cpp -o game.exe -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -mwindows
+g++ main.cpp Game.cpp Player.cpp TileMap.cpp Tile.cpp Camera.cpp CircuitSystem.cpp CircuitPuzzle.cpp DialogueSystem.cpp VFX.cpp AudioSystem.cpp HardwareInterface.cpp AchievementSystem.cpp -o game.exe -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -mwindows && ./game.exe
 ```
 
 ---
